@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow</title>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>🚀 TaskFlow</h1>
+        <p>AI Assisted Task Management Platform</p>
+    </header>
+
+    <section class="stats-section">
+
+    <div class="stat-card total">
+        <h3>📋 Total Tasks</h3>
+        <h1 id="totalTasks">0</h1>
+    </div>
+
+    <div class="stat-card pending">
+        <h3>⏳ Pending</h3>
+        <h1 id="pendingTasks">0</h1>
+    </div>
+
+    <div class="stat-card completed">
+        <h3>✅ Completed</h3>
+        <h1 id="completedTasks">0</h1>
+    </div>
+
+</section>
+
+    <main>
+        
+
+        <!-- Add Task Form -->
+        <section class="form-section">
+
+            <h2>🤖 AI Quick Add</h2>
+
+<textarea
+    id="quickDescription"
+    placeholder="Example: Finish frontend ASAP tomorrow">
+</textarea>
+
+<input
+    type="number"
+    id="quickProjectId"
+    placeholder="Project ID">
+
+<button id="quickAddBtn" type="button">
+    🤖 Create using AI
+</button>
+
+<hr><br>
+
+            <h2>Add New Task</h2>
+
+            <form id="taskForm">
+
+                <label>Task Title</label>
+
+                <input
+                    type="text"
+                    id="title"
+                    placeholder="Enter Task Title"
+                >
+
+                <small id="titleError"></small>
+
+
+                <label>Description</label>
+
+                <textarea
+                    id="description"
+                    placeholder="Enter Description"
+                ></textarea>
+
+
+                <label>Priority</label>
+
+                <select id="priority">
+
+                    <option value="low">Low</option>
+
+                    <option value="medium" selected>
+                        Medium
+                    </option>
+
+                    <option value="high">
+                        High
+                    </option>
+
+                </select>
+
+
+                <label>Due Date</label>
+
+                <input
+                    type="text"
+                    id="due_date"
+                    placeholder="Today / Tomorrow / Next Friday"
+                >
+
+
+                <label>Project ID</label>
+
+                <input
+                    type="number"
+                    id="project_id"
+                    placeholder="Project ID"
+                >
+
+
+                <button type="submit">
+                    Add Task
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- Task List -->
+
+        <section class="task-section">
+
+            <h2>Task List</h2>
+
+
+            <input
+    type="text"
+    id="searchTask"
+    placeholder="🔍 Search tasks...">
+
+<select id="sortTasks">
+
+    <option value="newest">🆕 Newest First</option>
+    <option value="oldest">📜 Oldest First</option>
+    <option value="priority">🔥 High Priority</option>
+    <option value="status">📌 Pending First</option>
+
+</select>
+
+<br><br>
+
+            <div id="taskList">
+
+            </div>
+
+        </section>
+
+    </main>
+    <!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+
+    <div class="modal-content">
+
+        <h2>🗑️ Delete Task</h2>
+
+        <p>Are you sure you want to delete this task?</p>
+
+        <div class="modal-buttons">
+
+            <button id="cancelDelete" class="cancel-btn">
+                Cancel
+            </button>
+
+            <button id="confirmDelete" class="confirm-btn">
+                Delete
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Success Toast -->
+<div id="successToast" class="toast">
+    🎉 Awesome! Your task has been saved successfully. ✅🚀
+</div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
