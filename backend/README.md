@@ -30,6 +30,11 @@ The application allows users to create projects, manage tasks, search and sort t
 - CSS
 - JavaScript
 
+## Project Structure
+
+backend/
+frontend/
+README.md
 
 
 ## 🛠 Tech Stack
