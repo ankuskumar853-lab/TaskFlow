@@ -21,6 +21,16 @@ The application allows users to create projects, manage tasks, search and sort t
 - Benchmark Testing
 
 
+## Tech Stack
+
+- FastAPI
+- SQLAlchemy
+- Supabase
+- HTML
+- CSS
+- JavaScript
+
+
 
 ## 🛠 Tech Stack
 
