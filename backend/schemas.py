@@ -66,9 +66,7 @@ class TaskResponse(TaskCreate):
     class Config:
         from_attributes = True
 
-class QuickAddRequest(BaseModel):
-    text: str
-    project_id: int
+
 
 
 class QuickAddResponse(BaseModel):

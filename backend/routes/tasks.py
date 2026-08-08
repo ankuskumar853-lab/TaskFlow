@@ -44,15 +44,115 @@ def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
 
     return new_task
 
-@router.get("/", response_model=list[schemas.TaskResponse])
-def get_tasks(db: Session = Depends(get_db)):
-    tasks = (
-        db.query(models.Task)
-        .order_by(models.Task.id.desc())
+@router.get("/")
+def get_tasks(
+    sort: str | None = None,
+    db: Session = Depends(get_db)
+):
+    tasks = db.query(models.Task).all()
+
+    records = []
+
+    priority_rank = {
+        "low": 1,
+        "medium": 2,
+        "high": 3
+    }
+
+    for task in tasks:
+        records.append({
+            "id": task.id,
+            "title": task.title,
+            "priority": priority_rank[task.priority],
+            "priority_name": task.priority,
+            "due_date": task.due_date
+        })
+
+    if sort == "priority":
+        from algorithms import insertion_sort
+        insertion_sort(records, "priority")
+
+    return records
+
+@router.get("/search")
+def search_task(
+    title: str,
+    algo: str = "binary",
+    db: Session = Depends(get_db)
+):
+    from algorithms import (
+        insertion_sort,
+        binary_search,
+        linear_search
+    )
+
+    tasks = db.query(models.Task).all()
+
+    records = []
+
+    for task in tasks:
+        records.append({
+            "id": task.id,
+            "title": task.title
+        })
+
+    if algo == "binary":
+        insertion_sort(records, "title")
+
+        index = binary_search(
+            records,
+            title,
+            "title"
+        )
+
+    elif algo == "linear":
+        index = linear_search(
+            records,
+            title,
+            "title"
+        )
+
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="algo must be binary or linear"
+        )
+
+    if index == -1:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found"
+        )
+
+    return records[index]
+
+# ==========================
+# Project Statistics
+# ==========================
+@router.get("/stats/projects")
+def get_project_stats(db: Session = Depends(get_db)):
+
+    stats = (
+        db.query(
+            models.Project.id,
+            models.Project.name,
+            func.count(models.Task.id).label("task_count")
+        )
+        .outerjoin(models.Task)
+        .group_by(models.Project.id)
         .all()
     )
-    return tasks
 
+    result = []
+
+    for project in stats:
+        result.append({
+            "project_id": project.id,
+            "project_name": project.name,
+            "task_count": project.task_count
+        })
+
+    return result
 
 
 # Get Task By ID
@@ -126,30 +226,4 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     }
 
 
-# ==========================
-# Project Statistics
-# ==========================
-@router.get("/stats/projects")
-def get_project_stats(db: Session = Depends(get_db)):
 
-    stats = (
-        db.query(
-            models.Project.id,
-            models.Project.name,
-            func.count(models.Task.id).label("task_count")
-        )
-        .outerjoin(models.Task)
-        .group_by(models.Project.id)
-        .all()
-    )
-
-    result = []
-
-    for project in stats:
-        result.append({
-            "project_id": project.id,
-            "project_name": project.name,
-            "task_count": project.task_count
-        })
-
-    return result

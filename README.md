@@ -1,147 +1,445 @@
-# 🚀 TaskFlow
+const API_URL = "http://127.0.0.1:8000";
 
-## AI-Assisted Task Management Platform
+const taskForm = document.getElementById("taskForm");
+const taskList = document.getElementById("taskList");
+const titleError = document.getElementById("titleError");
 
-TaskFlow is a full-stack task management application developed using FastAPI, PostgreSQL (Supabase), HTML, CSS, and JavaScript.
+const deleteModal = document.getElementById("deleteModal");
+const confirmDelete = document.getElementById("confirmDelete");
+const cancelDelete = document.getElementById("cancelDelete");
+const successToast = document.getElementById("successToast");
+const searchTask = document.getElementById("searchTask");
+const sortTasks = document.getElementById("sortTasks");
 
-The application allows users to create projects, manage tasks, search and sort tasks, use AI to generate tasks from natural language, and track project progress.
+let editingTaskId = null;
+let deleteTaskId = null;
 
-## ✨ Features
+// ===============================
+// Load Tasks
+// ===============================
+async function loadTasks() {
 
-- Create Project
-- View Projects
-- Create Task
-- Update Task
-- Delete Task
-- AI Quick Add
-- Search Tasks
-- Sort Tasks
-- Task Status (Pending / Completed)
-- Project Statistics Dashboard
-- Benchmark Testing
+    taskList.innerHTML = "";
+
+    try {
+
+        const response = await fetch(`${API_URL}/tasks/`);
+
+        const tasks = await response.json();
+
+        const sortValue = sortTasks.value;
+
+if (sortValue === "oldest") {
+
+    tasks.sort((a, b) => a.id - b.id);
+
+}
+
+else if (sortValue === "newest") {
+
+    tasks.sort((a, b) => b.id - a.id);
+
+}
+
+else if (sortValue === "priority") {
+
+    const order = {
+        high: 1,
+        medium: 2,
+        low: 3
+    };
+
+    tasks.sort((a, b) => order[a.priority] - order[b.priority]);
+
+}
+
+else if (sortValue === "status") {
+
+    tasks.sort((a, b) => {
+        if (a.status === "pending" && b.status !== "pending") return -1;
+        if (a.status !== "pending" && b.status === "pending") return 1;
+        return 0;
+    });
+
+}
 
 
-## Tech Stack
 
-- FastAPI
-- SQLAlchemy
-- Supabase
-- HTML
-- CSS
-- JavaScript
+        document.getElementById("totalTasks").innerText = tasks.length;
 
-## Project Structure
+const pending = tasks.filter(
+    task => task.status === "pending"
+).length;
 
-backend/
-frontend/
-README.md
+document.getElementById("pendingTasks").innerText = pending;
+
+const completed = tasks.filter(
+    task => task.status === "completed"
+).length;
+
+document.getElementById("completedTasks").innerText = completed;
+
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+
+        const keyword = searchTask.value.toLowerCase();
+
+tasks
+.filter(task =>
+    task.title.toLowerCase().includes(keyword)
+)
+.forEach(task => {
+
+            const card = document.createElement("div");
+
+            card.className =
+    task.status === "completed"
+        ? "task-item completed-task"
+        : "task-item pending-task";
+
+            card.innerHTML = `
+                <h3>${task.title}</h3>
+
+                <p><strong>Description:</strong> ${task.description ?? ""}</p>
+
+                <p><strong>Status:</strong> ${task.status}</p>
+
+                <p><strong>Priority:</strong> ${task.priority}</p>
+
+                <p><strong>Due Date:</strong> ${task.due_date ?? "-"}</p>
+
+                <div class="task-buttons">
+
+    <button
+        class="edit-btn"
+        onclick="showEditForm(${task.id})"
+    >
+        ✏️ Edit
+    </button>
+
+    <button
+        class="delete-btn"
+        onclick="deleteTask(${task.id})"
+    >
+        🗑 Delete
+    </button>
+
+    <button
+        class="complete-btn"
+        onclick="toggleStatus(${task.id}, '${task.status}')"
+    >
+        ${task.status === "pending"
+            ? "✅ Complete"
+            : "🔄 Pending"}
+    </button>
+
+</div>
+            `;
+
+            taskList.appendChild(card);
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.log(error);
+
+        const cached = localStorage.getItem("tasks");
+
+        if (cached) {
+
+            const tasks = JSON.parse(cached);
+
+            tasks.forEach(task => {
+
+                const card = document.createElement("div");
+
+                card.className = "task-item";
+
+                card.innerHTML = `
+                    <h3>${task.title}</h3>
+
+                    <p>${task.priority}</p>
+                `;
+
+                taskList.appendChild(card);
+
+            });
+
+        }
+
+    }
+
+}
+
+// ===============================
+// Add Task
+// ===============================
+
+taskForm.addEventListener("submit", async function (e) {
+
+    e.preventDefault();
+
+    titleError.innerText = "";
+
+    const title = document.getElementById("title").value.trim();
+    const description = document.getElementById("description").value;
+    const priority = document.getElementById("priority").value;
+    const due_date = document.getElementById("due_date").value;
+    const project_id = Number(
+        document.getElementById("project_id").value
+    );
+
+    if (title.length < 3) {
+
+        titleError.innerText =
+            "Title must be at least 3 characters";
+
+        return;
+    }
+
+    const body = {
+        title,
+        description,
+        status: "pending",
+        priority,
+        due_date,
+        project_id
+    };
+
+    try {
+
+    console.log("URL:", `${API_URL}/tasks/`);
+    console.log("Body:", body);
+
+    let response;
+
+if (editingTaskId !== null) {
+
+    response = await fetch(`${API_URL}/tasks/${editingTaskId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+
+} else {
+
+    response = await fetch(`${API_URL}/tasks/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+
+}
+
+    console.log("Status:", response.status);
+    console.log("Response URL:", response.url);
+
+    const data = await response.text();
+    console.log("Response:", data);
+
+    if (!response.ok) {
+        alert("Task create failed");
+        return;
+    }
+
+    showSuccessToast(
+    editingTaskId !== null
+        ? "🎉 Task Updated Successfully! ✨"
+        : "🎉 Task Created Successfully! 🚀"
+);
+
+successToast.classList.add("show");
+
+setTimeout(() => {
+    successToast.classList.remove("show");
+}, 3000);
+
+    taskForm.reset();
+
+editingTaskId = null;
+
+taskForm.querySelector("button").innerText = "Add Task";
+
+loadTasks();
+
+} catch (error) {
+
+    console.error(error);
+
+    alert("❌ Server Connection Failed");
+
+}
+
+});
+
+loadTasks();
 
 
-## 🛠 Tech Stack
+// ===============================
+// Edit Task
+// ===============================
+// ===============================
+// Edit Task
+// ===============================
+async function showEditForm(id) {
 
-### Backend
-- FastAPI
-- SQLAlchemy
-- PostgreSQL (Supabase)
-- Pydantic
+    const response = await fetch(`${API_URL}/tasks/${id}`);
+    const task = await response.json();
 
-### Frontend
-- HTML
-- CSS
-- JavaScript
+    document.getElementById("title").value = task.title;
+    document.getElementById("description").value = task.description;
+    document.getElementById("priority").value = task.priority;
+    document.getElementById("due_date").value = task.due_date;
+    document.getElementById("project_id").value = task.project_id;
 
-### Algorithms
-- Insertion Sort
-- Binary Search
-- Linear Search
+    editingTaskId = id;
 
-## 📁 Project Structure
+    taskForm.querySelector("button").innerText = "Update Task";
+}
 
-backend/
-│── routes/
-│ ├── projects.py
-│ ├── tasks.py
-│ ├── algorithms.py
-│ └── quick_add.py
-│
-│── main.py
-│── database.py
-│── models.py
-│── schemas.py
-│── ai_parser.py
-│── algorithms.py
-│── benchmark.py
-│── requirements.txt
-│── README.md2
+// ===============================
+// Delete Task
+// ===============================
+function deleteTask(id) {
+    deleteTaskId = id;
+    deleteModal.classList.add("show");
+}
 
-## ⚙️ Installation
+cancelDelete.addEventListener("click", () => {
+    deleteModal.classList.remove("show");
+    deleteTaskId = null;
+});
 
-### Clone the repository
+confirmDelete.addEventListener("click", async () => {
 
-```bash
-git clone <repository-url>
-```
+    const response = await fetch(`${API_URL}/tasks/${deleteTaskId}`, {
+        method: "DELETE"
+    });
 
-### Go to project folder
+    if (!response.ok) {
+        alert("Delete failed");
+        return;
+    }
 
-```bash
-cd backend
-```
+    deleteModal.classList.remove("show");
+    deleteTaskId = null;
 
-### Create Virtual Environment
+    showSuccessToast("🗑️ Task Deleted Successfully!");
 
-```bash
-python -m venv venv
-```
+    loadTasks();
+});
 
-### Activate Virtual Environment (Windows)
+// ===============================
+// Toggle Task Status
+// ===============================
+async function toggleStatus(id, currentStatus) {
 
-```bash
-venv\Scripts\activate
-```
+    const newStatus =
+        currentStatus === "pending"
+            ? "completed"
+            : "pending";
 
-### Install Dependencies
+    const response = await fetch(`${API_URL}/tasks/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            status: newStatus
+        })
+    });
 
-```bash
-pip install -r requirements.txt
-```
+    if (!response.ok) {
+        alert("Status update failed");
+        return;
+    }
 
-### Run FastAPI
+    showSuccessToast(
+        newStatus === "completed"
+            ? "🎉 Task Completed Successfully! ✅"
+            : "📌 Task marked as Pending!"
+    );
 
-```bash
-uvicorn main:app --reload
-```
+    loadTasks();
+}
 
-## 📌 API Endpoints
 
-### Projects
+searchTask.addEventListener("input", loadTasks);
 
-- POST /projects
-- GET /projects
+sortTasks.addEventListener("change", loadTasks);
 
-### Tasks
 
-- POST /tasks
-- GET /tasks
-- GET /tasks/{id}
-- PUT /tasks/{id}
-- DELETE /tasks/{id}
 
-### AI Quick Add
+// ===============================
+// AI Quick Add
+// ===============================
 
-- POST /quick-add
+const quickAddBtn = document.getElementById("quickAddBtn");
 
-### Algorithms
+quickAddBtn.addEventListener("click", async () => {
 
-- GET /algorithms/tasks/sort
-- GET /algorithms/tasks/search
+    const description = document
+        .getElementById("quickDescription")
+        .value
+        .trim();
 
-### Statistics
+    const project_id = Number(
+        document.getElementById("quickProjectId").value
+    );
 
-- GET /tasks/stats/projects
+    if (description === "") {
+        alert("Please enter task description.");
+        return;
+    }
 
-## 👨‍💻 Author
+    const response = await fetch(`${API_URL}/quick-add/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            description,
+            project_id
+        })
+    });
 
-**DHEERAJ KUMAR**
+    if (!response.ok) {
+        alert("AI Quick Add Failed");
+        return;
+    }
 
-Built as a Full-Stack AI-Assisted Task Management Platform using FastAPI, PostgreSQL (Supabase), HTML, CSS, and JavaScript.
+    showSuccessToast("🤖 AI Task Created Successfully!");
+
+    document.getElementById("quickDescription").value = "";
+    document.getElementById("quickProjectId").value = "";
+
+    loadTasks();
+});
+
+
+
+// ===============================
+// Success Toast
+// ===============================
+
+// ===============================
+// Success Toast
+// ===============================
+function showSuccessToast(message) {
+
+    const toast = document.getElementById("successToast");
+
+    toast.innerText = message;
+
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3000);
+}

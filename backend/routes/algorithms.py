@@ -5,15 +5,22 @@ import models
 from database import get_db
 from algorithms import insertion_sort, binary_search, linear_search
 
+
 router = APIRouter(
-    prefix="/algorithms",
     tags=["Algorithms"]
 )
 
 
+# =========================
 # Sort Tasks By Priority
-@router.get("/tasks/sort")
-def sort_tasks(db: Session = Depends(get_db)):
+# GET /tasks?sort=priority
+# =========================
+
+@router.get("/tasks")
+def get_tasks_sorted(
+    sort: str | None = None,
+    db: Session = Depends(get_db)
+):
 
     tasks = db.query(models.Task).all()
 
@@ -34,12 +41,17 @@ def sort_tasks(db: Session = Depends(get_db)):
             "due_date": task.due_date
         })
 
-    insertion_sort(records, "priority")
+    if sort == "priority":
+        insertion_sort(records, "priority")
 
     return records
 
 
+# =========================
 # Search Task
+# GET /tasks/search?title=...&algo=binary
+# =========================
+
 @router.get("/tasks/search")
 def search_task(
     title: str,
@@ -67,12 +79,19 @@ def search_task(
             "title"
         )
 
-    else:
+    elif algo == "linear":
 
         index = linear_search(
             records,
             title,
             "title"
+        )
+
+    else:
+
+        raise HTTPException(
+            status_code=400,
+            detail="algo must be binary or linear"
         )
 
     if index == -1:

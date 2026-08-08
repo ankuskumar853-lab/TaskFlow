@@ -1,54 +1,97 @@
 import random
-import time
 
-from algorithms import insertion_sort, binary_search, linear_search
-
-
-# 1000 random records
-records = []
-
-for i in range(1000):
-    records.append({
-        "title": f"Task {i}",
-        "priority": random.randint(1, 3)
-    })
+from algorithms import (
+    insertion_sort_count,
+    binary_search_count,
+    linear_search_count
+)
 
 
-# --------------------------
-# Insertion Sort
-# --------------------------
-sort_data = records.copy()
+# ==========================================
+# Create TaskFlow-like Test Data
+# ==========================================
 
-start = time.perf_counter()
+def generate_records(size):
+    records = []
 
-insertion_sort(sort_data, "priority")
+    for i in range(size):
+        records.append({
+            "title": f"Task {i}",
+            "priority": random.randint(1, 3),
+            "due_date": "tomorrow"
+        })
 
-end = time.perf_counter()
-
-print(f"Insertion Sort: {end-start:.6f} sec")
-
-
-# --------------------------
-# Binary Search
-# --------------------------
-sort_data = sorted(records, key=lambda x: x["title"])
-
-start = time.perf_counter()
-
-binary_search(sort_data, "Task 500", "title")
-
-end = time.perf_counter()
-
-print(f"Binary Search: {end-start:.6f} sec")
+    return records
 
 
-# --------------------------
-# Linear Search
-# --------------------------
-start = time.perf_counter()
+# ==========================================
+# Run Benchmark
+# ==========================================
 
-linear_search(records, "Task 500", "title")
+sizes = [10, 500, 3000]
 
-end = time.perf_counter()
+for size in sizes:
 
-print(f"Linear Search: {end-start:.6f} sec")
+    print("\n" + "=" * 50)
+    print(f"DATA SIZE: {size}")
+    print("=" * 50)
+
+    records = generate_records(size)
+
+    # --------------------------------------
+    # Insertion Sort Count
+    # --------------------------------------
+
+    sort_records = records.copy()
+
+    insertion_comparisons = insertion_sort_count(
+        sort_records,
+        "priority"
+    )
+
+    print(
+        f"Insertion Sort comparisons: "
+        f"{insertion_comparisons}"
+    )
+
+    # --------------------------------------
+    # Binary Search Count
+    # --------------------------------------
+
+    binary_records = records.copy()
+
+    # First sort using the same insertion sort
+    insertion_sort_count(
+        binary_records,
+        "title"
+    )
+
+    target = f"Task {size // 2}"
+
+    binary_result = binary_search_count(
+        binary_records,
+        target,
+        "title"
+    )
+
+    print(
+        f"Binary Search: "
+        f"index={binary_result['index']}, "
+        f"comparisons={binary_result['comparison_count']}"
+    )
+
+    # --------------------------------------
+    # Linear Search Count
+    # --------------------------------------
+
+    linear_result = linear_search_count(
+        records,
+        target,
+        "title"
+    )
+
+    print(
+        f"Linear Search: "
+        f"index={linear_result['index']}, "
+        f"comparisons={linear_result['comparison_count']}"
+    )

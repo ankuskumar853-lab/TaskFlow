@@ -26,11 +26,27 @@ app = FastAPI(
 
 @app.middleware("http")
 async def log_requests(request, call_next):
+    start_time = time.time()
+
     try:
         response = await call_next(request)
+
+        process_time = (time.time() - start_time) * 1000
+
+        print(
+            f"{request.method} {request.url.path} - {process_time:.2f} ms"
+        )
+
         return response
+
     except Exception as e:
-        print("ERROR:", e)
+        process_time = (time.time() - start_time) * 1000
+
+        print(
+            f"{request.method} {request.url.path} - "
+            f"{process_time:.2f} ms - ERROR: {e}"
+        )
+
         raise
 
 # =========================
