@@ -130,3 +130,7 @@ taskflow/
 ├── seed.py
 ├── check_algorithms.py
 └── README.md
+
+## Repository Maintenance
+
+The project uses a single Git repository at the project root.
