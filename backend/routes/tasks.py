@@ -63,16 +63,27 @@ def get_tasks(
         records.append({
             "id": task.id,
             "title": task.title,
-            "priority": priority_rank[task.priority],
-            "priority_name": task.priority,
-            "due_date": task.due_date
+            "description": task.description,
+            "status": task.status,
+            "priority": task.priority,
+            "due_date": task.due_date,
+            "project_id": task.project_id,
+
+            # Sirf sorting ke liye
+            "priority_rank": priority_rank[task.priority]
         })
 
     if sort == "priority":
         from algorithms import insertion_sort
-        insertion_sort(records, "priority")
+
+        insertion_sort(records, "priority_rank")
+
+    # Sorting ke liye banaya tha, response me nahi chahiye
+    for record in records:
+        record.pop("priority_rank", None)
 
     return records
+
 
 @router.get("/search")
 def search_task(

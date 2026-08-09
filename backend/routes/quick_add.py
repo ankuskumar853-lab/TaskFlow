@@ -7,33 +7,43 @@ import schemas
 from database import get_db
 from ai_parser import parse_task
 
+
 router = APIRouter(
-    prefix="/quick-add",
+    prefix="/tasks",
     tags=["AI Quick Add"]
 )
 
 
-@router.post("/", response_model=schemas.TaskResponse, status_code=201)
+@router.post("/quick-add", response_model=schemas.TaskResponse, status_code=201)
 def quick_add_task(
     request: schemas.QuickAddRequest,
     db: Session = Depends(get_db)
 ):
 
-    # Check Project Exists
+    # ==========================
+    # Check Project
+    # ==========================
+
     project = db.query(models.Project).filter(
         models.Project.id == request.project_id
     ).first()
 
     if project is None:
         raise HTTPException(
-            status_code=404,
+            status_code=422,
             detail="Project not found"
         )
 
-    # AI Parser
+    # ==========================
+    # Mock AI Parser
+    # ==========================
+
     parsed = parse_task(request.description)
 
+    # ==========================
     # Create Task
+    # ==========================
+
     task = models.Task(
         title=parsed["title"],
         description=request.description,

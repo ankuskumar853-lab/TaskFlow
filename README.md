@@ -1,445 +1,132 @@
-const API_URL = "http://127.0.0.1:8000";
+# 🚀 TaskFlow — AI-Assisted Task Management Platform
 
-const taskForm = document.getElementById("taskForm");
-const taskList = document.getElementById("taskList");
-const titleError = document.getElementById("titleError");
+TaskFlow is a full-stack task and project management application built with FastAPI, SQLAlchemy, JavaScript, HTML, and CSS.
 
-const deleteModal = document.getElementById("deleteModal");
-const confirmDelete = document.getElementById("confirmDelete");
-const cancelDelete = document.getElementById("cancelDelete");
-const successToast = document.getElementById("successToast");
-const searchTask = document.getElementById("searchTask");
-const sortTasks = document.getElementById("sortTasks");
+It allows users to create, update, delete, search, sort, and complete tasks. It also includes an AI Quick-Add feature that converts a natural-language task description into a structured task using a deterministic rule-based parser.
 
-let editingTaskId = null;
-let deleteTaskId = null;
+---
 
-// ===============================
-// Load Tasks
-// ===============================
-async function loadTasks() {
+## 📌 Features
 
-    taskList.innerHTML = "";
+### Task Management
 
-    try {
+- Create tasks
+- View all tasks
+- View a task by ID
+- Update tasks
+- Delete tasks
+- Mark tasks as completed or pending
+- Task priority:
+  - Low
+  - Medium
+  - High
+- Optional due dates
+- Tasks belong to projects
 
-        const response = await fetch(`${API_URL}/tasks/`);
+### Dashboard
 
-        const tasks = await response.json();
+The frontend displays:
 
-        const sortValue = sortTasks.value;
+- Total tasks
+- Pending tasks
+- Completed tasks
 
-if (sortValue === "oldest") {
+### Search
 
-    tasks.sort((a, b) => a.id - b.id);
+Normal frontend search allows users to search tasks by title.
 
-}
+The backend also provides algorithm-based search:
 
-else if (sortValue === "newest") {
+- Linear Search
+- Binary Search
 
-    tasks.sort((a, b) => b.id - a.id);
+### Sorting
 
-}
+Tasks can be sorted by:
 
-else if (sortValue === "priority") {
+- Newest First
+- Oldest First
+- High Priority
+- Pending First
 
-    const order = {
-        high: 1,
-        medium: 2,
-        low: 3
-    };
+### AI Quick-Add
 
-    tasks.sort((a, b) => order[a.priority] - order[b.priority]);
+Users can enter a natural-language description such as:
 
-}
+> Finish the report next Friday, it's urgent
 
-else if (sortValue === "status") {
+The parser extracts:
 
-    tasks.sort((a, b) => {
-        if (a.status === "pending" && b.status !== "pending") return -1;
-        if (a.status !== "pending" && b.status === "pending") return 1;
-        return 0;
-    });
+- Task title
+- Priority
+- Due-date hint
 
-}
+The resulting task is stored in the same `tasks` database table.
 
+### Offline Cache
 
+The frontend stores the latest task list in `localStorage` so previously loaded tasks can still be displayed if the backend is temporarily unavailable.
 
-        document.getElementById("totalTasks").innerText = tasks.length;
+---
 
-const pending = tasks.filter(
-    task => task.status === "pending"
-).length;
+# 🛠️ Tech Stack
 
-document.getElementById("pendingTasks").innerText = pending;
+## Backend
 
-const completed = tasks.filter(
-    task => task.status === "completed"
-).length;
+- Python
+- FastAPI
+- SQLAlchemy
+- Pydantic
+- SQLite
+- Uvicorn
 
-document.getElementById("completedTasks").innerText = completed;
+## Frontend
 
-        localStorage.setItem("tasks", JSON.stringify(tasks));
+- HTML5
+- CSS3
+- JavaScript
+- Fetch API
+- Browser LocalStorage
 
-        const keyword = searchTask.value.toLowerCase();
+## Algorithms
 
-tasks
-.filter(task =>
-    task.title.toLowerCase().includes(keyword)
-)
-.forEach(task => {
+- Insertion Sort
+- Linear Search
+- Binary Search
 
-            const card = document.createElement("div");
+## AI Quick-Add
 
-            card.className =
-    task.status === "completed"
-        ? "task-item completed-task"
-        : "task-item pending-task";
-
-            card.innerHTML = `
-                <h3>${task.title}</h3>
-
-                <p><strong>Description:</strong> ${task.description ?? ""}</p>
-
-                <p><strong>Status:</strong> ${task.status}</p>
-
-                <p><strong>Priority:</strong> ${task.priority}</p>
-
-                <p><strong>Due Date:</strong> ${task.due_date ?? "-"}</p>
-
-                <div class="task-buttons">
-
-    <button
-        class="edit-btn"
-        onclick="showEditForm(${task.id})"
-    >
-        ✏️ Edit
-    </button>
-
-    <button
-        class="delete-btn"
-        onclick="deleteTask(${task.id})"
-    >
-        🗑 Delete
-    </button>
-
-    <button
-        class="complete-btn"
-        onclick="toggleStatus(${task.id}, '${task.status}')"
-    >
-        ${task.status === "pending"
-            ? "✅ Complete"
-            : "🔄 Pending"}
-    </button>
-
-</div>
-            `;
-
-            taskList.appendChild(card);
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.log(error);
-
-        const cached = localStorage.getItem("tasks");
-
-        if (cached) {
-
-            const tasks = JSON.parse(cached);
-
-            tasks.forEach(task => {
-
-                const card = document.createElement("div");
-
-                card.className = "task-item";
-
-                card.innerHTML = `
-                    <h3>${task.title}</h3>
-
-                    <p>${task.priority}</p>
-                `;
-
-                taskList.appendChild(card);
-
-            });
-
-        }
-
-    }
-
-}
-
-// ===============================
-// Add Task
-// ===============================
-
-taskForm.addEventListener("submit", async function (e) {
-
-    e.preventDefault();
-
-    titleError.innerText = "";
-
-    const title = document.getElementById("title").value.trim();
-    const description = document.getElementById("description").value;
-    const priority = document.getElementById("priority").value;
-    const due_date = document.getElementById("due_date").value;
-    const project_id = Number(
-        document.getElementById("project_id").value
-    );
-
-    if (title.length < 3) {
-
-        titleError.innerText =
-            "Title must be at least 3 characters";
-
-        return;
-    }
-
-    const body = {
-        title,
-        description,
-        status: "pending",
-        priority,
-        due_date,
-        project_id
-    };
-
-    try {
-
-    console.log("URL:", `${API_URL}/tasks/`);
-    console.log("Body:", body);
-
-    let response;
-
-if (editingTaskId !== null) {
-
-    response = await fetch(`${API_URL}/tasks/${editingTaskId}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-    });
-
-} else {
-
-    response = await fetch(`${API_URL}/tasks/`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-    });
-
-}
-
-    console.log("Status:", response.status);
-    console.log("Response URL:", response.url);
-
-    const data = await response.text();
-    console.log("Response:", data);
-
-    if (!response.ok) {
-        alert("Task create failed");
-        return;
-    }
-
-    showSuccessToast(
-    editingTaskId !== null
-        ? "🎉 Task Updated Successfully! ✨"
-        : "🎉 Task Created Successfully! 🚀"
-);
-
-successToast.classList.add("show");
-
-setTimeout(() => {
-    successToast.classList.remove("show");
-}, 3000);
-
-    taskForm.reset();
-
-editingTaskId = null;
-
-taskForm.querySelector("button").innerText = "Add Task";
-
-loadTasks();
-
-} catch (error) {
-
-    console.error(error);
-
-    alert("❌ Server Connection Failed");
-
-}
-
-});
-
-loadTasks();
-
-
-// ===============================
-// Edit Task
-// ===============================
-// ===============================
-// Edit Task
-// ===============================
-async function showEditForm(id) {
-
-    const response = await fetch(`${API_URL}/tasks/${id}`);
-    const task = await response.json();
-
-    document.getElementById("title").value = task.title;
-    document.getElementById("description").value = task.description;
-    document.getElementById("priority").value = task.priority;
-    document.getElementById("due_date").value = task.due_date;
-    document.getElementById("project_id").value = task.project_id;
-
-    editingTaskId = id;
-
-    taskForm.querySelector("button").innerText = "Update Task";
-}
-
-// ===============================
-// Delete Task
-// ===============================
-function deleteTask(id) {
-    deleteTaskId = id;
-    deleteModal.classList.add("show");
-}
-
-cancelDelete.addEventListener("click", () => {
-    deleteModal.classList.remove("show");
-    deleteTaskId = null;
-});
-
-confirmDelete.addEventListener("click", async () => {
-
-    const response = await fetch(`${API_URL}/tasks/${deleteTaskId}`, {
-        method: "DELETE"
-    });
-
-    if (!response.ok) {
-        alert("Delete failed");
-        return;
-    }
-
-    deleteModal.classList.remove("show");
-    deleteTaskId = null;
-
-    showSuccessToast("🗑️ Task Deleted Successfully!");
-
-    loadTasks();
-});
-
-// ===============================
-// Toggle Task Status
-// ===============================
-async function toggleStatus(id, currentStatus) {
-
-    const newStatus =
-        currentStatus === "pending"
-            ? "completed"
-            : "pending";
-
-    const response = await fetch(`${API_URL}/tasks/${id}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            status: newStatus
-        })
-    });
-
-    if (!response.ok) {
-        alert("Status update failed");
-        return;
-    }
-
-    showSuccessToast(
-        newStatus === "completed"
-            ? "🎉 Task Completed Successfully! ✅"
-            : "📌 Task marked as Pending!"
-    );
-
-    loadTasks();
-}
-
-
-searchTask.addEventListener("input", loadTasks);
-
-sortTasks.addEventListener("change", loadTasks);
-
-
-
-// ===============================
-// AI Quick Add
-// ===============================
-
-const quickAddBtn = document.getElementById("quickAddBtn");
-
-quickAddBtn.addEventListener("click", async () => {
-
-    const description = document
-        .getElementById("quickDescription")
-        .value
-        .trim();
-
-    const project_id = Number(
-        document.getElementById("quickProjectId").value
-    );
-
-    if (description === "") {
-        alert("Please enter task description.");
-        return;
-    }
-
-    const response = await fetch(`${API_URL}/quick-add/`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            description,
-            project_id
-        })
-    });
-
-    if (!response.ok) {
-        alert("AI Quick Add Failed");
-        return;
-    }
-
-    showSuccessToast("🤖 AI Task Created Successfully!");
-
-    document.getElementById("quickDescription").value = "";
-    document.getElementById("quickProjectId").value = "";
-
-    loadTasks();
-});
-
-
-
-// ===============================
-// Success Toast
-// ===============================
-
-// ===============================
-// Success Toast
-// ===============================
-function showSuccessToast(message) {
-
-    const toast = document.getElementById("successToast");
-
-    toast.innerText = message;
-
-    toast.classList.add("show");
-
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, 3000);
-}
+- Deterministic rule-based mock parser
+- No API key required
+- No network call required
+
+---
+
+# 📁 Project Structure
+
+```text
+taskflow/
+│
+├── backend/
+│   ├── main.py
+│   ├── database.py
+│   ├── models.py
+│   ├── schemas.py
+│   ├── algorithms.py
+│   ├── ai_parser.py
+│   │
+│   └── routes/
+│       ├── users.py
+│       ├── projects.py
+│       ├── tasks.py
+│       ├── algorithms.py
+│       └── quick_add.py
+│
+├── frontend/
+│   ├── index.html
+│   ├── styles.css
+│   └── script.js
+│
+├── seed.py
+├── check_algorithms.py
+└── README.md

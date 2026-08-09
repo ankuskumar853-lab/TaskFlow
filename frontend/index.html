@@ -1,67 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>TaskFlow</title>
 
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
+
+    <!-- =========================
+         Header
+    ========================== -->
 
     <header>
         <h1>🚀 TaskFlow</h1>
         <p>AI Assisted Task Management Platform</p>
     </header>
 
+
+    <!-- =========================
+         Dashboard Statistics
+    ========================== -->
+
     <section class="stats-section">
 
-    <div class="stat-card total">
-        <h3>📋 Total Tasks</h3>
-        <h1 id="totalTasks">0</h1>
-    </div>
+        <div class="stat-card total">
+            <h3>📋 Total Tasks</h3>
+            <h1 id="totalTasks">0</h1>
+        </div>
 
-    <div class="stat-card pending">
-        <h3>⏳ Pending</h3>
-        <h1 id="pendingTasks">0</h1>
-    </div>
+        <div class="stat-card pending">
+            <h3>⏳ Pending</h3>
+            <h1 id="pendingTasks">0</h1>
+        </div>
 
-    <div class="stat-card completed">
-        <h3>✅ Completed</h3>
-        <h1 id="completedTasks">0</h1>
-    </div>
+        <div class="stat-card completed">
+            <h3>✅ Completed</h3>
+            <h1 id="completedTasks">0</h1>
+        </div>
 
-</section>
+    </section>
+
+
+    <!-- =========================
+         Main Layout
+    ========================== -->
 
     <main>
-        
 
-        <!-- Add Task Form -->
+
+        <!-- =========================
+             Left Side - Add Task
+        ========================== -->
+
         <section class="form-section">
+
+            <!-- AI Quick Add -->
 
             <h2>🤖 AI Quick Add</h2>
 
-<textarea
-    id="quickDescription"
-    placeholder="Example: Finish frontend ASAP tomorrow">
-</textarea>
+            <textarea
+                id="quickDescription"
+                placeholder="Example: Finish frontend tomorrow high priority"
+            ></textarea>
 
-<input
-    type="number"
-    id="quickProjectId"
-    placeholder="Project ID">
+            <input
+                type="number"
+                id="quickProjectId"
+                placeholder="Project ID"
+            >
 
-<button id="quickAddBtn" type="button">
-    🤖 Create using AI
-</button>
+            <button
+                type="button"
+                id="quickAddBtn"
+            >
+                🤖 Create using AI
+            </button>
 
-<hr><br>
+
+            <hr>
+
+
+            <!-- Normal Add Task -->
 
             <h2>Add New Task</h2>
 
             <form id="taskForm">
 
-                <label>Task Title</label>
+                <label for="title">
+                    Task Title
+                </label>
 
                 <input
                     type="text"
@@ -72,7 +104,9 @@
                 <small id="titleError"></small>
 
 
-                <label>Description</label>
+                <label for="description">
+                    Description
+                </label>
 
                 <textarea
                     id="description"
@@ -80,11 +114,15 @@
                 ></textarea>
 
 
-                <label>Priority</label>
+                <label for="priority">
+                    Priority
+                </label>
 
                 <select id="priority">
 
-                    <option value="low">Low</option>
+                    <option value="low">
+                        Low
+                    </option>
 
                     <option value="medium" selected>
                         Medium
@@ -97,7 +135,9 @@
                 </select>
 
 
-                <label>Due Date</label>
+                <label for="due_date">
+                    Due Date
+                </label>
 
                 <input
                     type="text"
@@ -106,7 +146,9 @@
                 >
 
 
-                <label>Project ID</label>
+                <label for="project_id">
+                    Project ID
+                </label>
 
                 <input
                     type="number"
@@ -124,67 +166,156 @@
         </section>
 
 
-        <!-- Task List -->
+        <!-- =========================
+             Right Side - Task List
+        ========================== -->
 
         <section class="task-section">
 
             <h2>Task List</h2>
 
 
+            <!-- Normal Search -->
+
             <input
-    type="text"
-    id="searchTask"
-    placeholder="🔍 Search tasks...">
+                type="text"
+                id="searchTask"
+                placeholder="🔍 Search tasks..."
+            >
 
-<select id="sortTasks">
 
-    <option value="newest">🆕 Newest First</option>
-    <option value="oldest">📜 Oldest First</option>
-    <option value="priority">🔥 High Priority</option>
-    <option value="status">📌 Pending First</option>
+            <!-- Algorithm Search -->
 
-</select>
+            <div class="algorithm-search">
 
-<br><br>
+                <input
+                    type="text"
+                    id="algorithmSearch"
+                    placeholder="🔎 Search exact task title..."
+                >
 
-            <div id="taskList">
+                <select id="searchAlgorithm">
+
+                    <option value="binary">
+                        Binary Search
+                    </option>
+
+                    <option value="linear">
+                        Linear Search
+                    </option>
+
+                </select>
+
+
+                <button
+                    type="button"
+                    id="algorithmSearchBtn"
+                >
+                    🔍 Search
+                </button>
+
+
+                <button
+                    type="button"
+                    id="clearSearchBtn"
+                >
+                    ❌ Clear
+                </button>
 
             </div>
+
+
+            <!-- Sort -->
+
+            <select id="sortTasks">
+
+                <option value="newest">
+                    🆕 Newest First
+                </option>
+
+                <option value="oldest">
+                    📜 Oldest First
+                </option>
+
+                <option value="priority">
+                    🔥 High Priority
+                </option>
+
+                <option value="status">
+                    📌 Pending First
+                </option>
+
+            </select>
+
+
+            <!-- Task List -->
+
+            <div id="taskList"></div>
 
         </section>
 
     </main>
-    <!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="modal">
 
-    <div class="modal-content">
 
-        <h2>🗑️ Delete Task</h2>
+    <!-- =========================
+         Delete Confirmation Modal
+    ========================== -->
 
-        <p>Are you sure you want to delete this task?</p>
+    <div
+        id="deleteModal"
+        class="modal"
+    >
 
-        <div class="modal-buttons">
+        <div class="modal-content">
 
-            <button id="cancelDelete" class="cancel-btn">
-                Cancel
-            </button>
+            <h2>🗑️ Delete Task</h2>
 
-            <button id="confirmDelete" class="confirm-btn">
-                Delete
-            </button>
+            <p>
+                Are you sure you want to delete this task?
+            </p>
+
+            <div class="modal-buttons">
+
+                <button
+                    id="cancelDelete"
+                    class="cancel-btn"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="confirmDelete"
+                    class="confirm-btn"
+                    type="button"
+                >
+                    Delete
+                </button>
+
+            </div>
 
         </div>
 
     </div>
 
-</div>
 
-<!-- Success Toast -->
-<div id="successToast" class="toast">
-    🎉 Awesome! Your task has been saved successfully. ✅🚀
-</div>
+    <!-- =========================
+         Success Toast
+    ========================== -->
+
+    <div
+        id="successToast"
+        class="toast"
+    >
+    </div>
+
+
+    <!-- =========================
+         JavaScript
+    ========================== -->
 
     <script src="script.js"></script>
 
 </body>
+
 </html>

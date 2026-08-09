@@ -2,50 +2,32 @@ import re
 
 
 def parse_task(description: str):
-
     original_text = description
     text = description.lower()
 
-    # -------------------
+    # ==========================
     # Priority
-    # -------------------
+    # ==========================
 
-    if (
-        "urgent" in text or
-        "asap" in text or
-        "high priority" in text or
-        "high" in text
-    ):
+    if "urgent" in text or "asap" in text:
         priority = "high"
 
-    elif (
-        "low priority" in text or
-        "low" in text or
-        "whenever" in text
-    ):
+    elif "whenever" in text or "low priority" in text:
         priority = "low"
-
-    elif (
-        "medium priority" in text or
-        "medium" in text
-    ):
-        priority = "medium"
 
     else:
         priority = "medium"
 
-
-
-
-    # -------------------
+    # ==========================
     # Due Date
-    # -------------------
+    # ==========================
 
     due_date = None
 
-    keywords = [
+    date_phrases = [
         "today",
         "tomorrow",
+        "next week",
         "next monday",
         "next tuesday",
         "next wednesday",
@@ -53,47 +35,51 @@ def parse_task(description: str):
         "next friday",
         "next saturday",
         "next sunday",
-        "next week",
         "monday",
         "tuesday",
         "wednesday",
         "thursday",
         "friday",
         "saturday",
-        "sunday"
+        "sunday",
     ]
 
-    for word in keywords:
-
-        if word in text:
-            due_date = word
+    for phrase in date_phrases:
+        if phrase in text:
+            due_date = phrase
             break
 
-    # -------------------
+    # ==========================
     # Title
-    # -------------------
+    # ==========================
 
     title = original_text
 
-    remove_words = [
+    # Assignment ke according:
+    # priority decide karne wale keyword ke alawa
+    # saare priority keywords remove honge.
+
+    priority_words = [
         "urgent",
         "asap",
         "whenever",
-        "high",
-        "medium",
-        "low",
-        "high priority",
-        "medium priority",
-        "low priority"
+        "low priority",
     ]
 
-    if due_date:
-        remove_words.append(due_date)
-
-    for word in remove_words:
-
+    for word in priority_words:
         title = re.sub(
-            word,
+            re.escape(word),
+            "",
+            title,
+            flags=re.IGNORECASE
+        )
+
+    # Matched due-date phrase ke
+    # saare occurrences remove karo.
+
+    if due_date:
+        title = re.sub(
+            re.escape(due_date),
             "",
             title,
             flags=re.IGNORECASE
@@ -101,7 +87,7 @@ def parse_task(description: str):
 
     title = title.strip()
 
-    if title == "":
+    if not title:
         title = "Untitled task"
 
     return {

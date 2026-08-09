@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 # ==========================
 # User Schemas
 # ==========================
+
 class UserCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     email: str
@@ -21,6 +22,7 @@ class UserResponse(UserCreate):
 # ==========================
 # Project Schemas
 # ==========================
+
 class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     owner_id: int
@@ -36,6 +38,7 @@ class ProjectResponse(ProjectCreate):
 # ==========================
 # Task Schemas
 # ==========================
+
 class TaskCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=100)
     description: Optional[str] = None
@@ -47,9 +50,12 @@ class TaskCreate(BaseModel):
     @field_validator("title")
     @classmethod
     def validate_title(cls, value):
-        if not value.strip():
+        value = value.strip()
+
+        if not value:
             raise ValueError("Title cannot be empty")
-        return value.strip()
+
+        return value
 
 
 class TaskUpdate(BaseModel):
@@ -67,19 +73,10 @@ class TaskResponse(TaskCreate):
         from_attributes = True
 
 
-
-
-class QuickAddResponse(BaseModel):
-    message: str
-    task_id: int
-    title: str
-    priority: str
-    due_date: str | None = None        
-
-
 # ==========================
 # AI Quick Add
 # ==========================
+
 class QuickAddRequest(BaseModel):
     description: str = Field(..., min_length=1)
     project_id: int
@@ -88,8 +85,10 @@ class QuickAddRequest(BaseModel):
 # ==========================
 # Statistics Response
 # ==========================
+
 class ProjectStats(BaseModel):
     id: int
     name: str
     task_count: int
-
+    pending_count: int = 0
+    completed_count: int = 0

@@ -41,17 +41,8 @@ else if (sortValue === "newest") {
 
 }
 
-else if (sortValue === "priority") {
 
-    const order = {
-        high: 1,
-        medium: 2,
-        low: 3
-    };
 
-    tasks.sort((a, b) => order[a.priority] - order[b.priority]);
-
-}
 
 else if (sortValue === "status") {
 
@@ -96,46 +87,68 @@ tasks
         ? "task-item completed-task"
         : "task-item pending-task";
 
-            card.innerHTML = `
-                <h3>${task.title}</h3>
+            const title = document.createElement("h3");
+title.textContent = task.title;
 
-                <p><strong>Description:</strong> ${task.description ?? ""}</p>
+const description = document.createElement("p");
+description.textContent =
+    `Description: ${task.description ?? ""}`;
 
-                <p><strong>Status:</strong> ${task.status}</p>
+const status = document.createElement("p");
+status.textContent =
+    `Status: ${task.status}`;
 
-                <p><strong>Priority:</strong> ${task.priority}</p>
+const priority = document.createElement("p");
+priority.textContent =
+    `Priority: ${task.priority}`;
 
-                <p><strong>Due Date:</strong> ${task.due_date ?? "-"}</p>
+const dueDate = document.createElement("p");
+dueDate.textContent =
+    `Due Date: ${task.due_date ?? "-"}`;
 
-                <div class="task-buttons">
+const buttons = document.createElement("div");
+buttons.className = "task-buttons";
 
-    <button
-        class="edit-btn"
-        onclick="showEditForm(${task.id})"
-    >
-        ✏️ Edit
-    </button>
+const editButton = document.createElement("button");
+editButton.className = "edit-btn";
+editButton.textContent = "✏️ Edit";
 
-    <button
-        class="delete-btn"
-        onclick="deleteTask(${task.id})"
-    >
-        🗑 Delete
-    </button>
+editButton.addEventListener("click", () => {
+    showEditForm(task.id);
+});
 
-    <button
-        class="complete-btn"
-        onclick="toggleStatus(${task.id}, '${task.status}')"
-    >
-        ${task.status === "pending"
-            ? "✅ Complete"
-            : "🔄 Pending"}
-    </button>
+const deleteButton = document.createElement("button");
+deleteButton.className = "delete-btn";
+deleteButton.textContent = "🗑 Delete";
 
-</div>
-            `;
+deleteButton.addEventListener("click", () => {
+    deleteTask(task.id);
+});
 
-            taskList.appendChild(card);
+const completeButton = document.createElement("button");
+completeButton.className = "complete-btn";
+completeButton.textContent =
+    task.status === "pending"
+        ? "✅ Complete"
+        : "🔄 Pending";
+
+completeButton.addEventListener("click", () => {
+    toggleStatus(task.id, task.status);
+});
+
+buttons.appendChild(editButton);
+buttons.appendChild(deleteButton);
+buttons.appendChild(completeButton);
+
+card.appendChild(title);
+card.appendChild(description);
+card.appendChild(status);
+card.appendChild(priority);
+card.appendChild(dueDate);
+card.appendChild(buttons);
+
+taskList.appendChild(card);
+
 
         });
 
@@ -157,14 +170,18 @@ tasks
 
                 card.className = "task-item";
 
-                card.innerHTML = `
-                    <h3>${task.title}</h3>
+                const title = document.createElement("h3");
+title.textContent = task.title;
 
-                    <p>${task.priority}</p>
-                `;
+const priority = document.createElement("p");
+priority.textContent = task.priority;
 
-                taskList.appendChild(card);
+card.appendChild(title);
+card.appendChild(priority);
 
+taskList.appendChild(card);
+
+                
             });
 
         }
@@ -288,21 +305,25 @@ loadTasks();
 // Edit Task
 // ===============================
 async function showEditForm(id) {
-
     const response = await fetch(`${API_URL}/tasks/${id}`);
+
+    if (!response.ok) {
+        alert("Task not found");
+        return;
+    }
+
     const task = await response.json();
 
     document.getElementById("title").value = task.title;
-    document.getElementById("description").value = task.description;
+    document.getElementById("description").value = task.description ?? "";
     document.getElementById("priority").value = task.priority;
-    document.getElementById("due_date").value = task.due_date;
+    document.getElementById("due_date").value = task.due_date ?? "";
     document.getElementById("project_id").value = task.project_id;
 
     editingTaskId = id;
 
     taskForm.querySelector("button").innerText = "Update Task";
 }
-
 // ===============================
 // Delete Task
 // ===============================
@@ -443,3 +464,106 @@ function showSuccessToast(message) {
         toast.classList.remove("show");
     }, 3000);
 }
+
+// ===============================
+// Algorithm Search
+// ===============================
+
+const algorithmSearch =
+    document.getElementById("algorithmSearch");
+
+const searchAlgorithm =
+    document.getElementById("searchAlgorithm");
+
+const algorithmSearchBtn =
+    document.getElementById("algorithmSearchBtn");
+
+const clearSearchBtn =
+    document.getElementById("clearSearchBtn");
+
+
+algorithmSearchBtn.addEventListener("click", async () => {
+
+    const title = algorithmSearch.value.trim();
+
+    const algorithm = searchAlgorithm.value;
+
+    if (title === "") {
+        alert("Please enter task title.");
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/tasks/search?title=${encodeURIComponent(title)}&algo=${algorithm}`
+        );
+
+        if (response.status === 404) {
+            alert("❌ Task not found");
+            return;
+        }
+
+        if (!response.ok) {
+            alert("Search failed");
+            return;
+        }
+
+        const task = await response.json();
+
+        taskList.innerHTML = "";
+
+        const card = document.createElement("div");
+
+        card.className =
+            task.status === "completed"
+                ? "task-item completed-task"
+                : "task-item pending-task";
+
+        const taskTitle = document.createElement("h3");
+        taskTitle.textContent = task.title;
+
+        const description = document.createElement("p");
+        description.textContent =
+            `Description: ${task.description ?? ""}`;
+
+        const status = document.createElement("p");
+        status.textContent =
+            `Status: ${task.status}`;
+
+        const priority = document.createElement("p");
+        priority.textContent =
+            `Priority: ${task.priority}`;
+
+        const dueDate = document.createElement("p");
+        dueDate.textContent =
+            `Due Date: ${task.due_date ?? "-"}`;
+
+        card.appendChild(taskTitle);
+        card.appendChild(description);
+        card.appendChild(status);
+        card.appendChild(priority);
+        card.appendChild(dueDate);
+
+        taskList.appendChild(card);
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("❌ Server Connection Failed");
+
+    }
+
+});
+
+
+// Clear Algorithm Search
+
+clearSearchBtn.addEventListener("click", () => {
+
+    algorithmSearch.value = "";
+
+    loadTasks();
+
+});

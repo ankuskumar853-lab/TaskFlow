@@ -156,6 +156,18 @@ button:hover{
     border-radius:10px;
 }
 
+/* ==========================
+Task List Scroll
+========================== */
+
+#taskList {
+    max-height: 450px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+}
+
+
 .task-section h2{
 
     margin-bottom:20px;
@@ -206,12 +218,7 @@ button:hover{
     gap:10px;
 }
 
-.edit-btn{
 
-    background:#16a34a;
-
-    transition:.3s;
-}
 
 
 .edit-btn{
@@ -514,14 +521,6 @@ button:hover{
     background:linear-gradient(135deg,#22c55e,#16a34a);
 }
 
-@media(max-width:768px){
-
-    .stats-section{
-
-        flex-direction:column;
-    }
-}
-
 
 
 .complete-btn{
@@ -547,4 +546,121 @@ button:hover{
 .pending-task{
     background:#fef9c3;
     border-left:6px solid #eab308;
+}
+
+
+
+/* ===========================
+   Task List Internal Scroll
+=========================== */
+
+#taskList {
+    max-height: 450px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+}
+
+
+/* ===========================
+   Mobile Stats - Compact
+   =========================== */
+
+@media (max-width: 768px) {
+
+    .stats-section {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+        flex-wrap: nowrap;
+    }
+
+    .stat-card {
+        min-width: 0;
+        flex: 1;
+        height: 65px;
+        padding: 6px 4px;
+        border-radius: 8px;
+    }
+
+    .stat-card h3 {
+        font-size: 11px;
+        margin-bottom: 2px;
+    }
+
+    .stat-card h1 {
+        font-size: 20px;
+        margin: 0;
+        line-height: 1;
+    }
+}
+
+
+@media (max-width: 768px) {
+
+    #taskList {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 5px;
+    }
+
+}
+
+
+/* ===========================
+   Algorithm Search
+=========================== */
+
+.algorithm-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+#algorithmSearch {
+    flex: 1;
+    min-width: 180px;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+#searchAlgorithm {
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+#algorithmSearchBtn,
+#clearSearchBtn {
+    margin-top: 0;
+    padding: 12px 18px;
+}
+
+#clearSearchBtn {
+    background: #6b7280;
+}
+
+#clearSearchBtn:hover {
+    background: #4b5563;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+    .algorithm-search {
+        flex-direction: column;
+    }
+
+    #algorithmSearch,
+    #searchAlgorithm,
+    #algorithmSearchBtn,
+    #clearSearchBtn {
+        width: 100%;
+    }
+
 }
