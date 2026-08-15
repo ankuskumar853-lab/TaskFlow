@@ -14,8 +14,8 @@ router = APIRouter(
 )
 
 
-@router.post("/quick-add", response_model=schemas.TaskResponse, status_code=201)
-def quick_add_task(
+@router.post("/quick-add")
+def quick_add_preview(
     request: schemas.QuickAddRequest,
     db: Session = Depends(get_db)
 ):
@@ -41,20 +41,13 @@ def quick_add_task(
     parsed = parse_task(request.description)
 
     # ==========================
-    # Create Task
+    # Return Preview Only
     # ==========================
 
-    task = models.Task(
-        title=parsed["title"],
-        description=request.description,
-        status="pending",
-        priority=parsed["priority"],
-        due_date=parsed["due_date"],
-        project_id=request.project_id
-    )
-
-    db.add(task)
-    db.commit()
-    db.refresh(task)
-
-    return task
+    return {
+        "title": parsed["title"],
+        "description": request.description,
+        "priority": parsed.get("priority", "medium"),
+        "due_date": parsed.get("due_date"),
+        "project_id": request.project_id
+    }
