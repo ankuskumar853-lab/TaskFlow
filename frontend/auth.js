@@ -53,6 +53,7 @@ if (loginForm) {
 
         loginError.innerText = "";
         loginSuccess.innerText = "";
+        loginSuccess.classList.remove("show");
 
 
         const email = loginEmail.value.trim();
@@ -155,6 +156,8 @@ if (loginForm) {
             loginSuccess.innerText =
                 "✅ Login successful! Opening dashboard...";
 
+            loginSuccess.classList.add("show");
+
 
             // ==================================
             // GO TO DASHBOARD
@@ -233,6 +236,51 @@ if (
 
 }
 
+
+// ==========================================
+// CONFIRM PASSWORD SHOW / HIDE
+// ==========================================
+
+const confirmPasswordField =
+    document.getElementById("confirmPassword");
+
+const confirmPasswordToggle =
+    document.getElementById("confirmPasswordToggle");
+
+
+if (
+    confirmPasswordField &&
+    confirmPasswordToggle
+) {
+
+    confirmPasswordToggle.addEventListener(
+        "click",
+        () => {
+
+            if (
+                confirmPasswordField.type === "password"
+            ) {
+
+                confirmPasswordField.type = "text";
+
+                confirmPasswordToggle.innerText = "🙈";
+
+            }
+
+            else {
+
+                confirmPasswordField.type = "password";
+
+                confirmPasswordToggle.innerText = "👁";
+
+            }
+
+        }
+    );
+
+}
+
+
 // ==========================================
 // REGISTER
 // ==========================================
@@ -256,6 +304,7 @@ if (registerForm) {
 
         registerError.innerText = "";
         registerSuccess.innerText = "";
+        registerSuccess.classList.remove("show");
 
 
         const name = registerName.value.trim();
@@ -297,8 +346,7 @@ if (registerForm) {
         try {
 
             const response = await fetch(
-
-                 `${API_URL}/users/`,
+                `${API_URL}/users/`,
                 {
                     method: "POST",
 
@@ -333,6 +381,8 @@ if (registerForm) {
 
             registerSuccess.innerText =
                 "✅ Account created successfully! Redirecting to login...";
+
+            registerSuccess.classList.add("show");
 
 
             setTimeout(() => {

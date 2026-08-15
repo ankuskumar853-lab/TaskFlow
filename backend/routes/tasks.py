@@ -7,12 +7,42 @@ from sqlalchemy import func
 import models
 import schemas
 from database import get_db
+from auth import get_current_user
 
 
 router = APIRouter(
     prefix="/tasks",
     tags=["Tasks"]
 )
+
+
+# =========================================================
+# HELPER: CHECK PROJECT OWNERSHIP
+# =========================================================
+
+def get_owned_project(
+    project_id: int,
+    current_user: models.User,
+    db: Session
+):
+
+    project = (
+        db.query(models.Project)
+        .filter(
+            models.Project.id == project_id,
+            models.Project.owner_id == current_user.id
+        )
+        .first()
+    )
+
+    if project is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Project not found"
+        )
+
+    return project
 
 
 # =========================================================
@@ -26,23 +56,18 @@ router = APIRouter(
 )
 def create_task(
     task: schemas.TaskCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
 
     print("CREATE TASK:", task)
 
-    # Check project
-    project = (
-        db.query(models.Project)
-        .filter(models.Project.id == task.project_id)
-        .first()
+    # Check project belongs to current user
+    get_owned_project(
+        task.project_id,
+        current_user,
+        db
     )
-
-    if project is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Project not found"
-        )
 
     new_task = models.Task(
         title=task.title,
@@ -69,7 +94,8 @@ def create_task(
 @router.post("/quick-add")
 def quick_add_task(
     request: schemas.QuickAddRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
 
     print("QUICK ADD REQUEST:", request)
@@ -82,20 +108,12 @@ def quick_add_task(
             detail="Description cannot be empty"
         )
 
-    # Check project
-    project = (
-        db.query(models.Project)
-        .filter(
-            models.Project.id == request.project_id
-        )
-        .first()
+    # Check project belongs to current user
+    get_owned_project(
+        request.project_id,
+        current_user,
+        db
     )
-
-    if project is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Project not found"
-        )
 
     text = description.lower()
 
@@ -179,17 +197,25 @@ def quick_add_task(
 
 
 # =========================================================
-# GET ALL TASKS
+# GET ALL TASKS (ONLY CURRENT USER'S TASKS)
 # =========================================================
 
 @router.get("/")
 def get_tasks(
     sort: str | None = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
 
     tasks = (
         db.query(models.Task)
+        .join(
+            models.Project,
+            models.Task.project_id == models.Project.id
+        )
+        .filter(
+            models.Project.owner_id == current_user.id
+        )
         .order_by(models.Task.id.desc())
         .all()
     )
@@ -267,14 +293,15 @@ def get_tasks(
 
 
 # =========================================================
-# SEARCH TASK
+# SEARCH TASK (ONLY CURRENT USER'S TASKS)
 # =========================================================
 
 @router.get("/search")
 def search_task(
     title: str,
     algo: str = "binary",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
 
     from algorithms import (
@@ -285,6 +312,13 @@ def search_task(
 
     tasks = (
         db.query(models.Task)
+        .join(
+            models.Project,
+            models.Task.project_id == models.Project.id
+        )
+        .filter(
+            models.Project.owner_id == current_user.id
+        )
         .all()
     )
 
@@ -351,8 +385,13 @@ def search_task(
 
     task = (
         db.query(models.Task)
+        .join(
+            models.Project,
+            models.Task.project_id == models.Project.id
+        )
         .filter(
-            models.Task.id == task_id
+            models.Task.id == task_id,
+            models.Project.owner_id == current_user.id
         )
         .first()
     )
@@ -376,12 +415,13 @@ def search_task(
 
 
 # =========================================================
-# PROJECT STATISTICS
+# PROJECT STATISTICS (ONLY CURRENT USER'S PROJECTS)
 # =========================================================
 
 @router.get("/stats/projects")
 def get_project_stats(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
 
     stats = (
@@ -396,6 +436,9 @@ def get_project_stats(
             models.Task,
             models.Task.project_id
             == models.Project.id
+        )
+        .filter(
+            models.Project.owner_id == current_user.id
         )
         .group_by(
             models.Project.id,
@@ -418,7 +461,7 @@ def get_project_stats(
 
 
 # =========================================================
-# GET SINGLE TASK
+# GET SINGLE TASK (ONLY IF OWNED BY CURRENT USER)
 # =========================================================
 
 @router.get(
@@ -427,13 +470,19 @@ def get_project_stats(
 )
 def get_task(
     task_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
 
     task = (
         db.query(models.Task)
+        .join(
+            models.Project,
+            models.Task.project_id == models.Project.id
+        )
         .filter(
-            models.Task.id == task_id
+            models.Task.id == task_id,
+            models.Project.owner_id == current_user.id
         )
         .first()
     )
@@ -449,7 +498,7 @@ def get_task(
 
 
 # =========================================================
-# UPDATE TASK
+# UPDATE TASK (ONLY IF OWNED BY CURRENT USER)
 # =========================================================
 
 @router.put(
@@ -459,7 +508,8 @@ def get_task(
 def update_task(
     task_id: int,
     updated_task: schemas.TaskUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
 
     print(
@@ -470,8 +520,13 @@ def update_task(
 
     task = (
         db.query(models.Task)
+        .join(
+            models.Project,
+            models.Task.project_id == models.Project.id
+        )
         .filter(
-            models.Task.id == task_id
+            models.Task.id == task_id,
+            models.Project.owner_id == current_user.id
         )
         .first()
     )
@@ -496,21 +551,11 @@ def update_task(
 
     if "project_id" in update_data:
 
-        project = (
-            db.query(models.Project)
-            .filter(
-                models.Project.id
-                == update_data["project_id"]
-            )
-            .first()
+        get_owned_project(
+            update_data["project_id"],
+            current_user,
+            db
         )
-
-        if project is None:
-
-            raise HTTPException(
-                status_code=404,
-                detail="Project not found"
-            )
 
     # -----------------------------------------------------
     # Update fields
@@ -536,13 +581,14 @@ def update_task(
 
 
 # =========================================================
-# DELETE TASK
+# DELETE TASK (ONLY IF OWNED BY CURRENT USER)
 # =========================================================
 
 @router.delete("/{task_id}")
 def delete_task(
     task_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
 
     print(
@@ -552,8 +598,13 @@ def delete_task(
 
     task = (
         db.query(models.Task)
+        .join(
+            models.Project,
+            models.Task.project_id == models.Project.id
+        )
         .filter(
-            models.Task.id == task_id
+            models.Task.id == task_id,
+            models.Project.owner_id == current_user.id
         )
         .first()
     )
