@@ -1,4 +1,4 @@
-const API_URL = "https://taskflow-1-is4v.onrender.com";
+const API_URL = "http://127.0.0.1:8000";
 
 const loginForm = document.getElementById("loginForm");
 const loginEmail = document.getElementById("loginEmail");
@@ -230,5 +230,135 @@ if (
 
         }
     );
+
+}
+
+// ==========================================
+// REGISTER
+// ==========================================
+
+const registerForm = document.getElementById("registerForm");
+const registerName = document.getElementById("registerName");
+const registerEmail = document.getElementById("registerEmail");
+const confirmPassword = document.getElementById("confirmPassword");
+
+const registerError = document.getElementById("registerError");
+const registerSuccess = document.getElementById("registerSuccess");
+const registerButton = document.getElementById("registerButton");
+
+
+if (registerForm) {
+
+    registerForm.addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+
+        registerError.innerText = "";
+        registerSuccess.innerText = "";
+
+
+        const name = registerName.value.trim();
+        const email = registerEmail.value.trim();
+        const password = registerPassword.value;
+        const confirmPass = confirmPassword.value;
+
+
+        // ======================================
+        // VALIDATION
+        // ======================================
+
+        if (!name || !email || !password || !confirmPass) {
+
+            registerError.innerText =
+                "Please fill all fields.";
+
+            return;
+        }
+
+
+        if (password !== confirmPass) {
+
+            registerError.innerText =
+                "Passwords do not match.";
+
+            return;
+        }
+
+
+        // ======================================
+        // DISABLE BUTTON
+        // ======================================
+
+        registerButton.disabled = true;
+        registerButton.innerText = "Creating account...";
+
+
+        try {
+
+            const response = await fetch(
+
+                 `${API_URL}/users/`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        password: password
+                    })
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            console.log("Register response:", data);
+
+
+            if (!response.ok) {
+
+                registerError.innerText =
+                    data.detail ||
+                    "Registration failed.";
+
+                return;
+            }
+
+
+            registerSuccess.innerText =
+                "✅ Account created successfully! Redirecting to login...";
+
+
+            setTimeout(() => {
+
+                window.location.href = "login.html";
+
+            }, 1000);
+
+        }
+
+        catch (error) {
+
+            console.error("Register Error:", error);
+
+            registerError.innerText =
+                "❌ Could not connect to FastAPI. Make sure the backend is running.";
+
+        }
+
+        finally {
+
+            registerButton.disabled = false;
+            registerButton.innerText = "Create Account";
+
+        }
+
+    });
 
 }
