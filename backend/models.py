@@ -132,6 +132,12 @@ class Task(Base):
         nullable=False
     )
 
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=True
+    )
+
     # Relationship
     project = relationship(
         "Project",
